@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Diwali | Festival of Lights</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+width:100%;
+height:100%;
+overflow:hidden;
+background:#080313;
+color:white;
+font-family:Segoe UI,Arial,sans-serif;
+}
+
+#scene{position:fixed;inset:0;z-index:0}
+#scene canvas{display:block;width:100%;height:100%}
+
+.overlay{
+position:fixed;
+inset:0;
+z-index:2;
+pointer-events:none;
+background:linear-gradient(180deg,transparent,rgba(8,3,19,.3));
+}
+
+.content{
+position:fixed;
+z-index:3;
+inset:0;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+text-align:center;
+padding:24px 18px 100px;
+pointer-events:none;
+opacity:0;
+transition:opacity 1.4s ease;
+}
+
+.content.show{opacity:1}
+.content>*{pointer-events:auto}
+
+.eyebrow{
+font-size:12px;
+letter-spacing:5px;
+color:#ffdc91;
+margin-bottom:17px;
+}
+
+h1{
+font-size:clamp(48px,9vw,108px);
+line-height:1.1;
+font-weight:900;
+background:linear-gradient(100deg,#fff3bd,#ffb52e,#fff8d8,#ff9f1c);
+background-size:250%;
+color:transparent;
+background-clip:text;
+-webkit-background-clip:text;
+animation:goldShine 5s linear infinite;
+}
+
+.subtitle{
+font-size:clamp(16px,2.5vw,25px);
+color:#ffe9bd;
+margin-top:19px;
+}
+
+.message{
+max-width:610px;
+margin-top:17px;
+font-size:15px;
+line-height:1.8;
+color:#f5e7d9;
+}
+
+.action{
+margin-top:26px;
+padding:14px 32px;
+border:1px solid #ffe2a0;
+border-radius:50px;
+background:linear-gradient(120deg,#f08a16,#ffd46d);
+color:#351600;
+font-weight:800;
+font-size:15px;
+cursor:pointer;
+box-shadow:0 0 28px #ff9f35aa;
+}
+
+#intro{
+position:fixed;
+inset:0;
+z-index:10;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+text-align:center;
+padding:20px;
+background:radial-gradient(ellipse at center,#49200f,#190b24 48%,#07020e);
+transition:opacity 1.2s,visibility 1.2s;
+}
+
+#intro.hide{
+opacity:0;
+visibility:hidden;
+pointer-events:none;
+}
+
+.intro-lamp{
+font-size:100px;
+filter:drop-shadow(0 0 25px #ff9e2c);
+animation:lampPulse 1.5s infinite alternate;
+}
+
+#intro h2{
+font-size:clamp(22px,4vw,42px);
+letter-spacing:4px;
+color:#ffe0a0;
+margin-top:20px;
+}
+
+#intro p{
+font-size:11px;
+letter-spacing:3px;
+color:#d9b998;
+margin-top:13px;
+}
+
+#enter{
+margin-top:30px;
+padding:14px 30px;
+border:0;
+border-radius:40px;
+background:linear-gradient(120deg,#f39b25,#ffe09a);
+color:#321600;
+font-weight:800;
+cursor:pointer;
+}
+
+#music{
+position:fixed;
+right:18px;
+top:18px;
+z-index:5;
+padding:11px 16px;
+border:1px solid #e9bd70;
+border-radius:30px;
+background:#201326;
+color:#ffe2a4;
+cursor:pointer;
+}
+
+.footer{
+position:fixed;
+z-index:4;
+bottom:17px;
+width:100%;
+text-align:center;
+font-size:10px;
+letter-spacing:3px;
+color:#e0c5a6;
+}
+
+@keyframes goldShine{
+to{background-position:250% center}
+}
+
+@keyframes lampPulse{
+from{transform:scale(.96);filter:drop-shadow(0 0 12px #ff9e2c)}
+to{transform:scale(1.05);filter:drop-shadow(0 0 38px #ffbd47)}
+}
+
+@media(max-width:600px){
+.message{font-size:13px}
+.eyebrow{font-size:10px;letter-spacing:3px}
+#music{font-size:12px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="scene"></div>
+<div class="overlay"></div>
+
+<div id="intro">
+<div class="intro-lamp">🪔</div>
+<h2>THE FESTIVAL OF LIGHTS</h2>
+<p>LIGHT • LOVE • JOY • PROSPERITY</p>
+<button id="enter">ENTER CELEBRATION ✨</button>
+</div>
+
+<button id="music">✹ Crackers OFF</button>
+
+<main class="content" id="main">
+<div class="eyebrow">✦ A NIGHT OF LIGHT & HAPPINESS ✦</div>
+<h1>Happy Diwali</h1>
+<div class="subtitle">May Your Life Shine Like a Million Diyas</div>
+
+<p class="message">
+May this festival fill your home with happiness, your heart with love, and your life with prosperity.
+May every diya bring new hope and every sparkle create beautiful memories.
+<br><strong>Wishing you and your family a very Happy Diwali! 🪔</strong>
+</p>
+
+<button class="action" id="celebrate">🎆 Celebrate Now</button>
+</main>
+
+<div class="footer">LIGHT • LOVE • HAPPINESS • PROSPERITY</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+(() => {
+
+const host=document.getElementById('scene');
+
+if(!window.THREE){
+host.innerHTML='<h2 style="text-align:center;padding:30vh 20px">Please check your internet connection and refresh.</h2>';
+return;
+}
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x080313);
+scene.fog=new THREE.FogExp2(0x080313,0.012);
+
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,0.1,150);
+camera.position.set(0,0.4,18);
+camera.lookAt(0,0,0);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputEncoding=THREE.sRGBEncoding;
+host.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffc58b,1.15));
+
+const moon=new THREE.PointLight(0xff9b35,2.1,45);
+moon.position.set(0,5,5);
+scene.add(moon);
+
+// STARS
+
+const starPositions=[];
+
+for(let i=0;i<900;i++){
+starPositions.push(
+(Math.random()-.5)*48,
+Math.random()*24-7,
+-8-Math.random()*18
+);
+}
+
+const starGeo=new THREE.BufferGeometry();
+starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPositions,3));
+
+const stars=new THREE.Points(
+starGeo,
+new THREE.PointsMaterial({
+color:0xffdf9c,
+size:.055,
+transparent:true,
+opacity:.9
+})
+);
+
+scene.add(stars);
+
+// DIYA
+
+const diya=new THREE.Group();
+diya.position.set(0,-4.45,1);
+scene.add(diya);
+
+const gold=new THREE.MeshStandardMaterial({
+color:0xd98a19,
+metalness:.72,
+roughness:.28
+});
+
+const goldLight=new THREE.MeshStandardMaterial({
+color:0xffd36a,
+metalness:.65,
+roughness:.23
+});
+
+const bowlProfile=[
+new THREE.Vector2(0,0),
+new THREE.Vector2(.45,.04),
+new THREE.Vector2(.9,.16),
+new THREE.Vector2(1.2,.36),
+new THREE.Vector2(1.22,.43),
+new THREE.Vector2(1.12,.46),
+new THREE.Vector2(0,.46)
+];
+
+const bowl=new THREE.Mesh(
+new THREE.LatheGeometry(bowlProfile,64),
+gold
+);
+
+bowl.position.y=.05;
+diya.add(bowl);
+
+const rim=new THREE.Mesh(
+new THREE.TorusGeometry(1.12,.055,12,64),
+goldLight
+);
+
+rim.rotation.x=Math.PI/2;
+rim.position.y=.47;
+diya.add(rim);
+
+const wick=new THREE.Mesh(
+new THREE.CylinderGeometry(.035,.055,.32,12),
+new THREE.MeshStandardMaterial({color:0x302016})
+);
+
+wick.position.set(0,.66,0);
+diya.add(wick);
+
+const flame=new THREE.Mesh(
+new THREE.SphereGeometry(.25,20,20),
+new THREE.MeshBasicMaterial({color:0xffa31a})
+);
+
+flame.scale.set(.62,1.65,.62);
+flame.position.set(0,.99,0);
+diya.add(flame);
+
+const flameCore=new THREE.Mesh(
+new THREE.SphereGeometry(.12,16,16),
+new THREE.MeshBasicMaterial({color:0xfff0a0})
+);
+
+flameCore.scale.y=1.5;
+flameCore.position.set(0,.94,.06);
+diya.add(flameCore);
+
+const diyaLight=new THREE.PointLight(0xff9e27,3.2,9);
+diyaLight.position.set(0,1.05,1);
+diya.add(diyaLight);
+
+// PEOPLE
+
+const people=[];
+
+function makePerson(x,shirtColor,scale=1){
+
+const g=new THREE.Group();
+
+const shirt=new THREE.MeshStandardMaterial({color:shirtColor});
+const skin=new THREE.MeshStandardMaterial({color:0xb8754d});
+const dark=new THREE.MeshStandardMaterial({color:0x21132a});
+
+const torso=new THREE.Mesh(
+new THREE.CylinderGeometry(.25,.34,.92,14),shirt
+);
+
+torso.position.y=.58;
+g.add(torso);
+
+const head=new THREE.Mesh(
+new THREE.SphereGeometry(.23,18,16),skin
+);
+
+head.position.y=1.25;
+g.add(head);
+
+const hair=new THREE.Mesh(
+new THREE.SphereGeometry(.235,16,10,0,Math.PI*2,0,Math.PI*.55),dark
+);
+
+hair.position.y=1.34;
+g.add(hair);
+
+for(const side of [-1,1]){
+
+const arm=new THREE.Mesh(
+new THREE.CylinderGeometry(.075,.09,.72,10),shirt
+);
+
+arm.position.set(side*.39,1.02,0);
+arm.rotation.z=side===-1?.65:-.65;
+g.add(arm);
+
+const hand=new THREE.Mesh(
+new THREE.SphereGeometry(.095,12,12),skin
+);
+
+hand.position.set(side*.62,1.32,.02);
+g.add(hand);
+
+const leg=new THREE.Mesh(
+new THREE.CylinderGeometry(.105,.12,.66,10),dark
+);
+
+leg.position.set(side*.14,-.2,0);
+g.add(leg);
+
+const stick=new THREE.Mesh(
+new THREE.CylinderGeometry(.018,.018,.42,8),
+new THREE.MeshBasicMaterial({color:0xffd18a})
+);
+
+stick.position.set(side*.68,1.53,.03);
+stick.rotation.z=side*.25;
+g.add(stick);
+
+const spark=new THREE.PointLight(0xffa32b,1.5,2.4);
+spark.position.set(side*.68,1.76,.08);
+g.add(spark);
+}
+
+g.scale.setScalar(scale);
+g.position.set(x,-5.25,1.5);
+
+scene.add(g);
+
+people.push({
+group:g,
+baseY:-5.25,
+phase:Math.random()*6
+});
+
+}
+
+makePerson(-6.1,0xb72f45,.92);
+makePerson(-4.65,0x167b68,.82);
+makePerson(4.65,0x9a4caa,.82);
+makePerson(6.1,0xd18b22,.92);
+
+// LANTERNS
+
+const lanterns=[];
+
+function addLantern(x,y,z){
+
+const g=new THREE.Group();
+
+const mat=new THREE.MeshBasicMaterial({
+color:0xffa63c,
+transparent:true,
+opacity:.82,
+side:THREE.DoubleSide
+});
+
+const body=new THREE.Mesh(
+new THREE.CylinderGeometry(.23,.17,.55,8,1,true),mat
+);
+
+g.add(body);
+
+const top=new THREE.Mesh(
+new THREE.TorusGeometry(.22,.025,6,12),
+new THREE.MeshBasicMaterial({color:0xffdf8c})
+);
+
+top.position.y=.27;
+g.add(top);
+
+const glow=new THREE.PointLight(0xff9a2b,.8,2.5);
+g.add(glow);
+
+g.position.set(x,y,z);
+scene.add(g);
+
+lanterns.push({
+group:g,
+speed:.012+Math.random()*.012,
+phase:Math.random()*6
+});
+
+}
+
+for(let i=0;i<10;i++){
+addLantern(
+(Math.random()-.5)*22,
+-4+Math.random()*13,
+-3-Math.random()*4
+);
+}
+
+// EMBERS
+
+const embers=[];
+
+for(let i=0;i<130;i++){
+
+const m=new THREE.Mesh(
+new THREE.SphereGeometry(.025,6,6),
+new THREE.MeshBasicMaterial({color:0xffc75b})
+);
+
+m.position.set(
+(Math.random()-.5)*26,
+Math.random()*15-7,
+-1-Math.random()*8
+);
+
+scene.add(m);
+embers.push(m);
+
+}
+
+// FIREWORKS
+
+const bursts=[];
+const palette=[
+0xffc83d,0xff554e,0x54d9ff,
+0xff70c8,0x8cff9a,0xffffff
+];
+
+function burst(x,y,z){
+
+const count=105;
+const pos=[];
+const vel=[];
+
+for(let i=0;i<count;i++){
+
+pos.push(x,y,z);
+
+const d=new THREE.Vector3(
+Math.random()*2-1,
+Math.random()*2-1,
+Math.random()*2-1
+).normalize();
+
+vel.push(d.multiplyScalar(.045+Math.random()*.13));
+
+}
+
+const geo=new THREE.BufferGeometry();
+
+geo.setAttribute(
+'position',
+new THREE.Float32BufferAttribute(pos,3)
+);
+
+const mat=new THREE.PointsMaterial({
+color:palette[Math.floor(Math.random()*palette.length)],
+size:.085,
+transparent:true,
+opacity:1,
+blending:THREE.AdditiveBlending,
+depthWrite:false
+});
+
+const points=new THREE.Points(geo,mat);
+scene.add(points);
+
+bursts.push({points,vel,life:1});
+
+}
+
+// ROCKETS
+
+const rockets=[];
+
+function launchRocket(){
+
+const g=new THREE.Group();
+
+const body=new THREE.Mesh(
+new THREE.CylinderGeometry(.045,.045,.38,8),
+new THREE.MeshBasicMaterial({color:0xffd36b})
+);
+
+g.add(body);
+
+const tip=new THREE.Mesh(
+new THREE.ConeGeometry(.07,.16,8),
+new THREE.MeshBasicMaterial({color:0xff7433})
+);
+
+tip.position.y=.26;
+g.add(tip);
+
+const x=(Math.random()-.5)*17;
+
+g.position.set(x,-6,-2);
+scene.add(g);
+
+rockets.push({
+group:g,
+speed:.12+Math.random()*.055,
+target:2.5+Math.random()*4.5
+});
+
+}
+
+// ANIMATION
+
+let elapsed=0;
+let rocketTick=0;
+let entered=false;
+
+const clock=new THREE.Clock();
+
+function animate(){
+
+requestAnimationFrame(animate);
+
+const dt=Math.min(clock.getDelta(),.04);
+
+elapsed+=dt;
+rocketTick+=dt;
+
+stars.rotation.y+=dt*.006;
+
+flame.scale.y=1.65+Math.sin(elapsed*9)*.16;
+flame.scale.x=.62+Math.sin(elapsed*7)*.06;
+
+flameCore.scale.y=1.5+Math.sin(elapsed*11)*.12;
+
+diyaLight.intensity=2.8+Math.sin(elapsed*10)*.65;
+
+diya.rotation.y=Math.sin(elapsed*.55)*.07;
+
+people.forEach(p=>{
+p.group.position.y=p.baseY+
+Math.abs(Math.sin(elapsed*2.2+p.phase))*.12;
+});
+
+lanterns.forEach(l=>{
+l.group.position.y+=l.speed;
+l.group.position.x+=Math.sin(elapsed+l.phase)*.0018;
+
+if(l.group.position.y>9){
+l.group.position.y=-7;
+}
+});
+
+embers.forEach(e=>{
+e.position.y+=dt*.22;
+if(e.position.y>9)e.position.y=-7;
+});
+
+if(rocketTick>1.45){
+launchRocket();
+rocketTick=0;
+}
+
+for(let i=rockets.length-1;i>=0;i--){
+
+const r=rockets[i];
+r.group.position.y+=r.speed;
+
+if(r.group.position.y>=r.target){
+
+burst(r.group.position.x,r.group.position.y,r.group.position.z);
+
+scene.remove(r.group);
+rockets.splice(i,1);
+}
+
+}
+
+for(let i=bursts.length-1;i>=0;i--){
+
+const b=bursts[i];
+const a=b.points.geometry.attributes.position.array;
+
+for(let j=0;j<b.vel.length;j++){
+
+a[j*3]+=b.vel[j].x;
+a[j*3+1]+=b.vel[j].y;
+a[j*3+2]+=b.vel[j].z;
+
+b.vel[j].y-=.0018;
+
+}
+
+b.points.geometry.attributes.position.needsUpdate=true;
+
+b.life-=dt*.72;
+b.points.material.opacity=Math.max(0,b.life);
+
+if(b.life<=0){
+
+scene.remove(b.points);
+b.points.geometry.dispose();
+b.points.material.dispose();
+bursts.splice(i,1);
+
+}
+
+}
+
+renderer.render(scene,camera);
+
+}
+
+animate();
+
+// ENTER CELEBRATION
+
+document.getElementById('enter').addEventListener('click',()=>{
+
+if(entered)return;
+
+entered=true;
+
+document.getElementById('intro').classList.add('hide');
+document.getElementById('main').classList.add('show');
+
+for(let i=0;i<7;i++){
+
+setTimeout(()=>{
+burst(
+(Math.random()-.5)*15,
+2+Math.random()*4,
+-2
+);
+},i*220);
+
+}
+
+});
+
+// CELEBRATE BUTTON
+
+document.getElementById('celebrate').addEventListener('click',()=>{
+
+for(let i=0;i<16;i++){
+
+setTimeout(()=>{
+
+burst(
+(Math.random()-.5)*19,
+1.5+Math.random()*5,
+-2
+);
+
+},i*115);
+
+}
+
+for(let i=0;i<5;i++){
+setTimeout(launchRocket,i*180);
+}
+
+});
+
+// CRACKER SOUND EFFECTS
+
+let audioCtx=null;
+let crackerTimer=null;
+let soundOn=false;
+
+function playCracker(){
+
+if(!audioCtx||!soundOn)return;
+
+const now=audioCtx.currentTime;
+const duration=.22+Math.random()*.22;
+
+const sampleCount=Math.floor(audioCtx.sampleRate*duration);
+
+const buffer=audioCtx.createBuffer(
+1,sampleCount,audioCtx.sampleRate
+);
+
+const data=buffer.getChannelData(0);
+
+for(let i=0;i<sampleCount;i++){
+
+const fade=Math.pow(1-i/sampleCount,2.2);
+data[i]=(Math.random()*2-1)*fade;
+
+}
+
+const noise=audioCtx.createBufferSource();
+noise.buffer=buffer;
+
+const high=audioCtx.createBiquadFilter();
+high.type='highpass';
+high.frequency.value=650+Math.random()*900;
+
+const low=audioCtx.createBiquadFilter();
+low.type='lowpass';
+low.frequency.value=5000;
+
+const gain=audioCtx.createGain();
+const volume=.12+Math.random()*.10;
+
+gain.gain.setValueAtTime(.0001,now);
+gain.gain.linearRampToValueAtTime(volume,now+.008);
+gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+
+noise.connect(high);
+high.connect(low);
+low.connect(gain);
+gain.connect(audioCtx.destination);
+
+noise.start(now);
+noise.stop(now+duration);
+
+if(Math.random()>.55){
+
+const boom=audioCtx.createOscillator();
+const boomGain=audioCtx.createGain();
+
+boom.type='sine';
+
+boom.frequency.setValueAtTime(115+Math.random()*55,now);
+boom.frequency.exponentialRampToValueAtTime(42,now+.16);
+
+boomGain.gain.setValueAtTime(.0001,now);
+boomGain.gain.linearRampToValueAtTime(.10,now+.006);
+boomGain.gain.exponentialRampToValueAtTime(.0001,now+.18);
+
+boom.connect(boomGain);
+boomGain.connect(audioCtx.destination);
+
+boom.start(now);
+boom.stop(now+.19);
+
+}
+
+}
+
+function scheduleCrackers(){
+
+if(!soundOn)return;
+
+playCracker();
+
+const nextDelay=450+Math.random()*1250;
+
+crackerTimer=setTimeout(scheduleCrackers,nextDelay);
+
+}
+
+document.getElementById('music').addEventListener('click',async function(){
+
+if(!audioCtx){
+audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+}
+
+soundOn=!soundOn;
+
+this.textContent=soundOn?'✹ Crackers ON':'✹ Crackers OFF';
+
+if(soundOn){
+
+await audioCtx.resume();
+scheduleCrackers();
+
+}else{
+
+clearTimeout(crackerTimer);
+
+}
+
+});
+
+// RESIZE
+
+window.addEventListener('resize',()=>{
+
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+
+renderer.setSize(innerWidth,innerHeight);
+
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+
+});
+
+})();
+</script>
+
+</body>
+</html>
